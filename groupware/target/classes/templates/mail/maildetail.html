@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+	<head>
+		<meta charset="UTF-8" />
+		<title>디테일메일함</title>
+		<link rel="stylesheet" href="/css/style.css">
+		<script src="/js/jquery-3.6.0.min.js"></script>
+		<script src="/js/script.js"></script>
+	</head>
+	<script>
+	function deleteMail(mailno) {
+	    if (!confirm("정말 삭제하시겠습니까?")) return;
+	
+	    fetch("/mail/delete", {
+	        method: "POST",
+	        headers: {
+	            "Content-Type": "application/x-www-form-urlencoded"
+	        },
+	        body: "mailno=" + mailno
+	    })
+	    .then(response => {
+	        if (response.ok) {
+	            alert("삭제 성공!");
+	            window.location.href = "/mail"; // 리스트로 이동
+	        } else {
+	            alert("삭제 실패...");
+	        }
+	    })
+	    .catch(err => {
+	        alert("에러 발생!");
+	        console.error(err);
+	    });
+	}
+	</script>
+	
+	<body>
+		<!-- header include -->
+		<header th:insert="fragments/header"></header>
+		<div class="flex_between">
+			<!-- nav include -->
+			<nav th:insert="fragments/nav"></nav>
+			
+			<section class="contents">
+					<!-- 메일 내용 영역 -->
+					    <div class="content">
+							<table class="table1">
+							  <tr>
+							    <td colspan="3" style="text-align: right;">
+							      <!--  뒤로가기 버튼 -->
+								  <button type="button" onclick="history.back();" style="display: inline;" class="button2">홈으로</button>
+					
+								  <th:block th:if="${!isSentMail}">
+									  <!-- 수신 메일일 때만 차단/해지 버튼 보여줌 -->
+									  <th:block th:if="${!isBlocked}">
+									    <form th:action="@{/mail/block/{blockedId}(blockedId=${mail.senderId})}" method="post" style="display:inline;">
+									      <button type="submit" onclick="return confirm('정말 이 사용자를 차단하시겠습니까?')" class="button2">차단</button>
+									    </form>
+									  </th:block>
+									
+									  <th:block th:if="${isBlocked}">
+									    <form th:action="@{/mail/unblock/{blockedId}(blockedId=${mail.senderId})}" method="post" style="display:inline;">
+									      <button type="submit" onclick="return confirm('정말 이 사용자의 차단을 해지하시겠습니까?')" class="button2">해지</button>
+									    </form>
+									  </th:block>
+									</th:block>
+															
+							      <!-- 삭제 버튼 -->
+							      <form th:action="@{/mail/delete}" method="post" style="display: inline;">
+							        <input type="hidden" name="mailno" th:value="${mail.mailno}" />
+							        <button type="submit" class="button2">삭제</button>
+							      </form>
+							      
+							      <!-- 회신 버튼 -->
+							      <form th:action="@{/mail/reply}" method="get" style="display: inline;">
+									  <input type="hidden" name="receiverId" th:value="${mail.senderId}" />
+									  <input type="hidden" name="subject" th:value="'RE: ' + ${mail.subject}" />
+									  <button type="submit" class="button1">회신</button>
+									  
+									</form>
+																      
+							    </td>
+							  </tr>
+							 <tr>
+							  <th>보낸 사람</th>
+							  <td th:text="${senderEmp != null ? senderEmp.name + ' (' + senderDeptName + ')' : (mail.mailSender != null ? mail.mailSender : mail.senderId)}"></td>
+							</tr>
+							<tr>
+							  <th>받은 사람</th>
+							  <td th:text="${receiverEmp != null ? receiverEmp.name + ' (' + receiverDeptName + ')' : (mail.mailReceiver != null ? mail.mailReceiver : mail.receiverId)}"></td>
+							</tr>
+														 
+							  <tr>
+							    <th>보낸 시간</th>
+							    <td>
+							      <span th:text="${mail.sentAt != null ? #temporals.format(mail.sentAt, 'yyyy-MM-dd HH:mm:ss') : '시간 정보 없음'}">보낸 시간</span>
+							    </td>
+							  </tr>
+							  <tr>
+							    <th>제목</th>
+							    <td th:utext="${mail.subject}">메일 제목</td>
+							  </tr>
+							  <tr>
+							    <th>내용</th>
+							    <td>
+							    
+							      <p th:utext="${#strings.replace(mail.content != null ? mail.content : '', '\n', '<br/>')}"></p>
+							    </td>
+							  </tr>
+							  <tr th:if="${mail.mailAttachment == 'Y'}">
+							  <th>첨부파일</th>
+								<td>
+								  <a th:href="@{/upload/{file}(file=${mail.attachmentName})}" download>
+								    <img th:src="@{/img/fileicon.svg}" alt="파일 아이콘" style="width:20px; height:20px; vertical-align:middle;"/>
+								    <span>첨부파일</span>
+								  </a>
+								</td>
+															
+								</tr>
+														  
+							</table>
+					  </div>
+			</section>
+		</div>
+	</body>
+</html>
